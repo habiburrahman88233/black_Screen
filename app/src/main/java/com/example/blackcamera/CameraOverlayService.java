@@ -15,13 +15,13 @@ public class CameraOverlayService extends AccessibilityService {
     private WindowManager windowManager;
     private View blackView;
     private boolean isShowing = false;
+    private String currentPackage = "";
 
     @Override
     public void onCreate() {
         super.onCreate();
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
-        // নিখুঁত পিচ ব্ল্যাক ভিউ তৈরি
         blackView = new View(this);
         blackView.setBackgroundColor(Color.BLACK);
     }
@@ -30,21 +30,27 @@ public class CameraOverlayService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
 
+        // শুধু উইন্ডো পরিবর্তন (নতুন অ্যাপ ওপেন বা ক্লোজ) ইভেন্ট ধরবে, ভেতরের কন্টেন্ট নয়
+        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            return;
+        }
+
         CharSequence pkgChar = event.getPackageName();
         if (pkgChar == null) return;
 
         String pkg = pkgChar.toString().toLowerCase();
 
-        // নিজের অ্যাপের মধ্যে ব্ল্যাক স্ক্রিন আসবে না
-        if (pkg.contains("blackcamera")) {
-            hideBlackScreen();
+        // ওভারলে ভিউ নিজে বা কোনো সিস্টেম ডায়ালগ যেন স্টেট নষ্ট না করে
+        if (pkg.contains("blackcamera") || pkg.contains("systemui")) {
             return;
         }
 
-        // শাওমির সিস্টেম ক্যামেরা এবং সাধারণ ক্যামেরা প্যাকেজ ডিটেকশন
-        boolean isCamera = pkg.contains("camera") || 
-                           pkg.equals("com.miui.camera") || 
-                           pkg.equals("com.android.camera");
+        currentPackage = pkg;
+
+        // Xiaomi ও Android ক্যামেরা সনাক্তকরণ
+        boolean isCamera = pkg.equals("com.miui.camera") || 
+                           pkg.equals("com.android.camera") || 
+                           pkg.contains("camera");
 
         if (isCamera) {
             showBlackScreen();
@@ -62,13 +68,12 @@ public class CameraOverlayService extends AccessibilityService {
                 layoutType = WindowManager.LayoutParams.TYPE_PHONE;
             }
 
-            // FLAG_NOT_TOUCHABLE দেওয়া হয়েছে যাতে সোয়াইপ বা হোম জেসচার সরাসরি কাজ করে
             WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
                     layoutType,
+                    // FLAG_NOT_FOCUSABLE নিশ্চিত করবে ব্যাক/হোম জেসচার স্বাভাবিক থাকবে
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                             | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                     PixelFormat.OPAQUE);
