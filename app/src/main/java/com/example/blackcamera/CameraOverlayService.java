@@ -21,6 +21,7 @@ public class CameraOverlayService extends AccessibilityService {
         super.onCreate();
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
+        // নিখুঁত পিচ ব্ল্যাক ভিউ তৈরি
         blackView = new View(this);
         blackView.setBackgroundColor(Color.BLACK);
     }
@@ -34,16 +35,16 @@ public class CameraOverlayService extends AccessibilityService {
 
         String pkg = pkgChar.toString().toLowerCase();
 
-        // নিজের অ্যাপকে ফিল্টার থেকে বাদ দেওয়া হলো যাতে নিজের অ্যাপে ব্ল্যাক স্ক্রিন না আসে
-        if (pkg.equals(getPackageName().toLowerCase())) {
+        // নিজের অ্যাপের মধ্যে ব্ল্যাক স্ক্রিন আসবে না
+        if (pkg.contains("blackcamera")) {
             hideBlackScreen();
             return;
         }
 
-        // শাওমি HyperOS-এর মূল ক্যামেরা প্যাকেজ শনাক্তকরণ
-        boolean isCamera = pkg.equals("com.miui.camera") || 
-                           pkg.equals("com.android.camera") || 
-                           pkg.contains("googlecamera");
+        // শাওমির সিস্টেম ক্যামেরা এবং সাধারণ ক্যামেরা প্যাকেজ ডিটেকশন
+        boolean isCamera = pkg.contains("camera") || 
+                           pkg.equals("com.miui.camera") || 
+                           pkg.equals("com.android.camera");
 
         if (isCamera) {
             showBlackScreen();
@@ -61,7 +62,7 @@ public class CameraOverlayService extends AccessibilityService {
                 layoutType = WindowManager.LayoutParams.TYPE_PHONE;
             }
 
-            // FLAG_NOT_TOUCHABLE দেওয়া হয়েছে যাতে স্ক্রিন কালো হলেও ব্যাক/হোম বাটন ও সোয়াইপ ঠিকঠাক কাজ করে
+            // FLAG_NOT_TOUCHABLE দেওয়া হয়েছে যাতে সোয়াইপ বা হোম জেসচার সরাসরি কাজ করে
             WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
