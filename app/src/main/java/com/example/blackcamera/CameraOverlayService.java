@@ -27,17 +27,24 @@ public class CameraOverlayService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            CharSequence pkgName = event.getPackageName();
-            if (pkgName != null) {
-                String pkg = pkgName.toString().toLowerCase();
+        if (event == null) return;
 
-                if (pkg.contains("camera")) {
-                    showBlackScreen();
-                } else {
-                    hideBlackScreen();
-                }
-            }
+        CharSequence pkgChar = event.getPackageName();
+        CharSequence clsChar = event.getClassName();
+
+        String pkg = (pkgChar != null) ? pkgChar.toString().toLowerCase() : "";
+        String cls = (clsChar != null) ? clsChar.toString().toLowerCase() : "";
+
+        // Xiaomi ও অন্যান্য সব ধরনের ক্যামেরা অ্যাপের প্যাকেজ ও ক্লাস নেম ডিটেকশন
+        boolean isCamera = pkg.contains("camera") || 
+                           pkg.contains("miui.camera") || 
+                           pkg.contains("android.camera") || 
+                           cls.contains("camera");
+
+        if (isCamera) {
+            showBlackScreen();
+        } else {
+            hideBlackScreen();
         }
     }
 
@@ -54,9 +61,9 @@ public class CameraOverlayService extends AccessibilityService {
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
                     layoutType,
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL 
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                            | WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                     PixelFormat.OPAQUE);
 
             params.gravity = Gravity.CENTER;
