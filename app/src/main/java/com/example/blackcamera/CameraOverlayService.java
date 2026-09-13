@@ -30,16 +30,20 @@ public class CameraOverlayService extends AccessibilityService {
         if (event == null) return;
 
         CharSequence pkgChar = event.getPackageName();
-        CharSequence clsChar = event.getClassName();
+        if (pkgChar == null) return;
 
-        String pkg = (pkgChar != null) ? pkgChar.toString().toLowerCase() : "";
-        String cls = (clsChar != null) ? clsChar.toString().toLowerCase() : "";
+        String pkg = pkgChar.toString().toLowerCase();
 
-        // Xiaomi ও অন্যান্য সব ধরনের ক্যামেরা অ্যাপের প্যাকেজ ও ক্লাস নেম ডিটেকশন
-        boolean isCamera = pkg.contains("camera") || 
-                           pkg.contains("miui.camera") || 
-                           pkg.contains("android.camera") || 
-                           cls.contains("camera");
+        // নিজের অ্যাপকে ফিল্টার থেকে বাদ দেওয়া হলো যাতে নিজের অ্যাপে ব্ল্যাক স্ক্রিন না আসে
+        if (pkg.equals(getPackageName().toLowerCase())) {
+            hideBlackScreen();
+            return;
+        }
+
+        // শাওমি HyperOS-এর মূল ক্যামেরা প্যাকেজ শনাক্তকরণ
+        boolean isCamera = pkg.equals("com.miui.camera") || 
+                           pkg.equals("com.android.camera") || 
+                           pkg.contains("googlecamera");
 
         if (isCamera) {
             showBlackScreen();
@@ -57,11 +61,13 @@ public class CameraOverlayService extends AccessibilityService {
                 layoutType = WindowManager.LayoutParams.TYPE_PHONE;
             }
 
+            // FLAG_NOT_TOUCHABLE দেওয়া হয়েছে যাতে স্ক্রিন কালো হলেও ব্যাক/হোম বাটন ও সোয়াইপ ঠিকঠাক কাজ করে
             WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
                     layoutType,
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                             | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                             | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                     PixelFormat.OPAQUE);
